@@ -1,4 +1,7 @@
 from sqlglot import parse_one,exp
+from typing import List
+from dataclasses import dataclass
+
 class Analyzer:
     def __init__(self,sql:str):
         self.raw_sql=sql
@@ -22,4 +25,16 @@ class Analyzer:
         return issues
 
 
+    def get_tables(self) -> List[str]:
+        tables={table.name for table in self.ast.find_all(exp.Table)}
+        return list(tables)
 
+    def has_select_star(self) -> bool:
+        return self.ast.find(exp.Star) is not None
+
+    def has_cartesian_product(self) -> bool:
+        joins=list(self.ast.find_all(exp.Join))
+        for join in joins:
+            if not join.args.get("on") and join.kind!="CROSS":
+                return True
+        return False
